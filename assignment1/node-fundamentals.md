@@ -1,7 +1,7 @@
 # Node.js Fundamentals
 
 ## What is Node.js?
-Node.js is a runtime environment, which is used to launch JS code out of browser.
+Node.js is a runtime environment, which is used to run JS code outside the browser.
 
 ## How does Node.js differ from running JavaScript in the browser?
 Runtime environment: JavaScript in the browser runs in a restricted environment that protects the user by preventing scripts from freely reading files or managing processes. Node.js lacks these restrictions, allowing JavaScript to interact with the operating system.
@@ -12,7 +12,7 @@ In Node.js, APIs are available for interacting with the file system (the `fs` mo
 
 Node.js has no concept of the DOM, as it does not render web pages.
 
-Node.js can run on the computer or on a server, so it can do things browser JavaScript normally can't do: read and write files, start a web server, read environment variables, work with operating system services, use backend libraries.
+Node.js can run on a computer or on a server, so it can do things browser JavaScript normally can't do: read and write files, start a web server, read environment variables, work with operating system services, use backend libraries.
 
 ## What is the V8 engine, and how does Node use it?
 V8 is a high-performance JavaScript engine developed by Google for the Chrome browser. Its task is to read and interpret your code, converting it into instructions that a computer can execute.

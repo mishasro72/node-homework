@@ -1,9 +1,10 @@
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const { fi } = require('@faker-js/faker');
+const os = require("os");
+const path = require("path");
+const fs = require("fs");
+const { faker } = require("@faker-js/faker");
+const { error } = require("console");
 
-const sampleFilesDir = path.join(__dirname, 'sample-files');
+const sampleFilesDir = path.join(__dirname, "sample-files");
 if (!fs.existsSync(sampleFilesDir)) {
   fs.mkdirSync(sampleFilesDir, { recursive: true });
 }
@@ -19,11 +20,11 @@ const filePath = path.join(__dirname, "sample-files", "demo.txt");
 console.log("Joined path:", filePath);
 
 // fs.promises API
-async function run(){
+async function run() {
   try {
-  await fs.promises.writeFile(filePath, "Hello from fs.promises!", "utf8");
-  const data = await fs.promises.readFile(filePath, "utf8");
-  console.log("fs.promises read:", data);
+    await fs.promises.writeFile(filePath, "Hello from fs.promises!", "utf8");
+    const data = await fs.promises.readFile(filePath, "utf8");
+    console.log("fs.promises read:", data);
   } catch (err) {
     console.error(err);
   }
@@ -32,3 +33,28 @@ async function run(){
 run();
 
 // Streams for large files- log first 40 chars of each chunk
+const largeFilePath = path.join(__dirname, "sample-files", "largefile.txt");
+for (let i = 0; i < 100; i++) {
+  fs.appendFileSync(
+    largeFilePath,
+    `Line ${i + 1}: ${faker.lorem.sentence()}\n`,
+    "utf8",
+  );
+}
+
+const readStream = fs.createReadStream(largeFilePath, {
+  encoding: "utf8",
+  highWaterMark: 1024,
+});
+
+readStream.on("data", (chunk) => {
+  console.log("Read chunk:", chunk);
+});
+
+readStream.on("end", () => {
+  console.log("Finished reading large file with streams.");
+});
+
+readStream.on("error", (err) => {
+  console.log("Error reading large file:", err.message);
+});
