@@ -39,13 +39,11 @@ Export: Uses `export`.
 **CommonJS (default in Node.js):**
 ```js
 const fs = require("fs");
-modul.exports = {  };
+module.exports = {  };
 ```
 
 **ES Modules (supported in modern Node.js):**
 ```js
-import { Link, useLocation } from "react-router-dom";
-export default function Home() {
-    pass
-};
+import fs from 'fs';
+export function readFileAsync(path) { /*…*/ }
 ``` 
