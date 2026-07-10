@@ -1,8 +1,6 @@
 const os = require("os");
 const path = require("path");
 const fs = require("fs");
-const { faker } = require("@faker-js/faker");
-const { error } = require("console");
 
 const sampleFilesDir = path.join(__dirname, "sample-files");
 if (!fs.existsSync(sampleFilesDir)) {
@@ -34,10 +32,11 @@ run();
 
 // Streams for large files- log first 40 chars of each chunk
 const largeFilePath = path.join(__dirname, "sample-files", "largefile.txt");
+fs.writeFileSync(largeFilePath, "", "utf8");
 for (let i = 0; i < 100; i++) {
   fs.appendFileSync(
     largeFilePath,
-    `Line ${i + 1}: ${faker.lorem.sentence()}\n`,
+    `Line ${i + 1}: This is a sample line for testing streams.\n`,
     "utf8",
   );
 }
@@ -48,7 +47,7 @@ const readStream = fs.createReadStream(largeFilePath, {
 });
 
 readStream.on("data", (chunk) => {
-  console.log("Read chunk:", chunk);
+  console.log("Read chunk:", chunk.substring(0, 40)); 
 });
 
 readStream.on("end", () => {

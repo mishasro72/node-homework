@@ -38,12 +38,22 @@ Export: Uses `export`.
 
 **CommonJS (default in Node.js):**
 ```js
-const fs = require("fs");
-module.exports = {  };
+const add = (a, b) => a + b;
+const subtract = (a, b) => a - b;
+
+module.exports = { add, subtract };
+
+const { add, subtract } = require('./mathUtils');
+console.log(add(10, 5));      
+console.log(subtract(10, 5)); 
 ```
 
 **ES Modules (supported in modern Node.js):**
 ```js
-import fs from 'fs';
-export function readFileAsync(path) { /*…*/ }
+export const add = (a, b) => a + b;
+export const subtract = (a, b) => a - b;
+
+import { add, subtract } from './mathUtils.js';
+console.log(add(10, 5));      
+console.log(subtract(10, 5)); 
 ``` 
