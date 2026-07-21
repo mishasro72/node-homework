@@ -8,6 +8,7 @@ function register(req, res) {
   };
   global.users.push(user);
   global.user_id = user;
+  console.log("Registered user:", user);
   return res.status(201).json({ name: user.name, email: user.email });
 }
 
@@ -20,13 +21,13 @@ function logon(req, res) {
       .status(200)
       .json({ name: matchingUser.name, email: matchingUser.email });
   } else {
-    return res.status(401);
+    return res.status(401).end();
   }
 }
 
 function logoff(req, res) {
   global.user_id = null;
-  return res.status(200);
+  return res.status(200).end();
 }
 
 module.exports = { register, logon, logoff };
