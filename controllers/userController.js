@@ -1,14 +1,14 @@
 function register(req, res) {
-  const { name, email, pasword } = req.body;
+  const { name, email, password } = req.body;
   const user = {
     id: global.users.length + 1,
     name: name,
     email: email,
-    pasword: pasword,
+    password: password,
   };
   global.users.push(user);
   global.user_id = user;
-  return res.status(201).json({ name: user.name, email: "user.email" });
+  return res.status(201).json({ name: user.name, email: user.email });
 }
 
 function logon(req, res) {
