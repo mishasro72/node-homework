@@ -7,7 +7,7 @@ function register(req, res) {
     password: password,
   };
   global.users.push(user);
-  global.user_id = user;
+  global.user_id = user.id;
   console.log("Registered user:", user);
   return res.status(201).json({ name: user.name, email: user.email });
 }
