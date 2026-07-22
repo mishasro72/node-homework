@@ -1,9 +1,5 @@
 function register(req, res) {
   const { name, email, password } = req.body;
-  const userExists = global.users.some((user) => user.email === email);
-  if (userExists) {
-    return res.status(400).json({ error: "Email already registered" });
-  }
   const user = {
     id: global.users.length + 1,
     name: name,
@@ -12,7 +8,6 @@ function register(req, res) {
   };
   global.users.push(user);
   global.user_id = user;
-  console.log("Registered user:", user);
   return res.status(201).json({ name: user.name, email: user.email });
 }
 
