@@ -16,7 +16,7 @@ function logon(req, res) {
   const { email, password } = req.body;
   const matchingUser = global.users.find((user) => user.email === email);
   if (matchingUser && matchingUser.password === password) {
-    global.user_id = matchingUser;
+    global.user_id = matchingUser.id;
     return res
       .status(200)
       .json({ name: matchingUser.name, email: matchingUser.email });
