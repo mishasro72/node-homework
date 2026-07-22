@@ -1,5 +1,9 @@
 function register(req, res) {
   const { name, email, password } = req.body;
+  const userExists = global.users.some((user) => user.email === email);
+  if (userExists) {
+    return res.status(400).json({ error: "Email already registered" });
+  }
   const user = {
     id: global.users.length + 1,
     name: name,
@@ -14,15 +18,14 @@ function register(req, res) {
 
 function logon(req, res) {
   const { email, password } = req.body;
-  const matchingUser = global.users.find((user) => user.email === email);
-  if (matchingUser && matchingUser.password === password) {
-    global.user_id = matchingUser;
+  const matchingUser = global.users.find((user) => user.email === email && user.password === password);
+  if (!matchingUser) {
+    return res.status(401).json({});
+  }
+  global.user_id = matchingUser;
     return res
       .status(200)
       .json({ name: matchingUser.name, email: matchingUser.email });
-  } else {
-    return res.status(401).end();
-  }
 }
 
 function logoff(req, res) {

@@ -1,6 +1,6 @@
 function notFound(req, res) {
   res.status(404).json({
-    message: "No route found",
+    error: "No route found",
   });
 }
 
