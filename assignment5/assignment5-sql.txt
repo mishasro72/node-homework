@@ -1,0 +1,1 @@
+SELECT order_id, SUM(price * quantity) as total_price FROM line_items INNER JOIN products ON line_items.product_id = products.product_id GROUP BY order_id ORDER BY order_id LIMIT 5;
