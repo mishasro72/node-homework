@@ -3,17 +3,12 @@ SELECT order_id, SUM(price * quantity) AS total_price FROM line_items JOIN produ
 SELECT customer_name, AVG(total_price) AS average_order_price FROM customers AS c JOIN (SELECT o.customer_id, o.order_id, SUM(products.price * li.quantity) AS total_price FROM orders AS o JOIN line_items AS li ON o.order_id=li.order_id JOIN products ON li.product_id = products.product_id GROUP BY o.customer_id, o.order_id) AS t ON c.customer_id = t.customer_id GROUP BY c.customer_id, c.customer_name ORDER BY c.customer_name;
 
 SELECT customer_id FROM customers WHERE customer_name = 'Perez and Sons';
-
 SELECT employee_id FROM employees WHERE first_name='Miranda' AND last_name='Harris';
-
 SELECT product_id FROM products ORDER BY price LIMIT 5;
-
 BEGIN;
-
 INSERT INTO orders (customer_id, employee_id, date) VALUES (16, 7, '2026-08-01') RETURNING order_id; 
-
 INSERT INTO line_items (order_id, product_id, quantity) VALUES (253, 23, 1 ), (253, 18, 1), (253, 43, 1), (253, 9, 1), (253, 44, 1);
-
 COMMIT;
-
 SELECT * FROM line_items WHERE order_id = 253;
+
+SELECT e.first_name, e.last_name, COUNT(o.employee_id) AS order_count FROM employees AS e JOIN orders AS o ON e.employee_id = o.employee_id GROUP BY o.employee_id, e.first_name, e.last_name HAVING COUNT(o.order_id) > 5 ORDER BY e.last_name;
