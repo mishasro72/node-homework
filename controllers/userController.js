@@ -22,7 +22,7 @@ async function register(req, res, next) {
     abortEarly: false,
   });
   if (error) {
-     return res.status(400).json({
+    return res.status(400).json({
       message: "Validation failed",
       details: error.details,
     });
@@ -30,16 +30,17 @@ async function register(req, res, next) {
   let user = null;
 
   value.hashed_password = await hashPassword(value.password);
-  try{
-    user = await pool.query(`INSERT INTO users (email, name, hashed_password) 
+  try {
+    user = await pool.query(
+      `INSERT INTO users (email, name, hashed_password) 
       VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, value.hashed_password]
+      [value.email, value.name, value.hashed_password],
     );
   } catch (e) {
     if (e.code === "23505") {
       return res.status(400).json({ message: "User already exists" });
     }
-    return next(e); 
+    return next(e);
   }
 
   const newUser = user.rows[0];
@@ -49,22 +50,21 @@ async function register(req, res, next) {
 
 async function logon(req, res) {
   const { email, password } = req.body;
-  // const matchingUser = global.users.find((user) => user.email === email);
   const result = await pool.query("SELECT * FROM users WHERE email = $1", [
     email,
   ]);
-  const matchingUser = result.rows[0];
-
-  if (!matchingUser) {
-    return res.status(404).json({ message: "User not found" });
+  if (result.rows.length === 0) {
+    return res.status(401).json({ message: "Invalid email or password" });
   }
+
+  const matchingUser = result.rows[0];
   const goodCredentials = await comparePassword(
     password,
     matchingUser.hashed_password,
   );
 
   if (!goodCredentials) {
-    return res.status(401).json({});
+    return res.status(401).json({ message: "Invalid email or password" });
   }
 
   global.user_id = matchingUser.id;
