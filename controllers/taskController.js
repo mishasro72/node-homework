@@ -1,108 +1,105 @@
-const { func } = require("joi");
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+const pool = require("../db/pg-pool");
 
-function taskCounter() {
-  let lastTaskNumber = 0;
-  return () => {
-    lastTaskNumber += 1;
-    return lastTaskNumber;
-  };
-}
-
-const getNextTaskId = taskCounter();
-
-function create(req, res) {
+async function create(req, res) {
   const { error, value } = taskSchema.validate(req.body ?? {}, {
     abortEarly: false,
   });
   if (error) {
     return res.status(400).json({ message: error.message });
   }
-  const newTask = {
-    id: getNextTaskId(),
-    userId: global.user_id.email,
-    ...value,
-  };
-  global.tasks.push(newTask);
 
-  const { userId, ...sanitizedTask } = newTask;
-  return res.status(201).json(sanitizedTask);
+  const task = await pool.query(
+    `INSERT INTO tasks (title, is_completed, user_id) 
+     VALUES ($1, $2, $3) 
+     RETURNING id, title, is_completed`,
+    [value.title, value.isCompleted ?? false, global.user_id],
+  );
+
+  return res.status(201).json(task.rows[0]);
 }
 
-function index(req, res) {
-  const user = global.user_id;
-  const userTasks = global.tasks.filter((task) => task.userId === user.email);
+async function index(req, res) {
+  const tasks = await pool.query(
+    "SELECT id, title, is_completed FROM tasks WHERE user_id = $1",
+    [global.user_id],
+  );
 
-  if (userTasks.length === 0) {
+  if (tasks.rows.length === 0) {
     return res.status(404).json({});
   }
 
-  const sanitizedTask = userTasks.map(({ userId, ...rest }) => rest);
-  return res.status(200).json(sanitizedTask);
+  return res.status(200).json(tasks.rows);
 }
 
-function show(req, res) {
+async function show(req, res) {
   const taskId = parseInt(req.params?.id);
-  const user = global.user_id;
   if (!taskId) {
     return res.status(400).json({});
   }
 
-  const currentTask = global.tasks.find(
-    (task) => task.id === taskId && task.userId === user.email,
+  const tasks = await pool.query(
+    "SELECT id, title, is_completed FROM tasks WHERE id = $1 AND user_id = $2",
+    [taskId, global.user_id],
   );
 
-  if (!currentTask) {
+  if (tasks.rows.length === 0) {
     return res.status(404).json({});
   }
-  const { userId, ...sanitizedTask } = currentTask;
-  return res.status(200).json(sanitizedTask);
+
+  return res.status(200).json(tasks.rows[0]);
 }
 
-function update(req, res) {
-  const user = global.user_id;
-  const { error, value } = patchTaskSchema.validate(req.body ?? {}, {
-    abortEarly: false,
-  });
-
+async function update(req, res) {
+  const { error, value: taskChange } = patchTaskSchema.validate(
+    req.body ?? {},
+    {
+      abortEarly: false,
+    },
+  );
   if (error) {
     return res.status(400).json({ message: error.message });
   }
 
-  const taskId = parseInt(req.params?.id);
-  const currentTask = global.tasks.find(
-    (task) => task.id === taskId && user.email === task.userId,
+  let keys = Object.keys(taskChange);
+
+  keys = keys.map((key) => (key === "isCompleted" ? "is_completed" : key));
+
+  const setClauses = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+  const idParm = `$${keys.length + 1}`;
+  const userParm = `$${keys.length + 2}`;
+
+  const updatedTask = await pool.query(
+    `UPDATE tasks SET ${setClauses} 
+     WHERE id = ${idParm} AND user_id = ${userParm} 
+     RETURNING id, title, is_completed`,
+    [...Object.values(taskChange), req.params.id, global.user_id],
   );
 
-  if (!currentTask) {
+  if (updatedTask.rows.length === 0) {
     return res.status(404).json({});
   }
-  Object.assign(currentTask, value);
 
-  const { userId, ...sanitizedTask } = currentTask;
-  return res.status(200).json(sanitizedTask);
+  return res.status(200).json(updatedTask.rows[0]);
 }
 
-function deleteTask(req, res) {
-  const user = global.user_id;
+async function deleteTask(req, res) {
   const taskId = parseInt(req.params?.id);
 
   if (!taskId) {
     return res.status(400).json({});
   }
 
-  const currentTaskIndex = global.tasks.findIndex(
-    (task) => task.userId === user.email && task.id === taskId,
+  const task = await pool.query(
+    "DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING id, title, is_completed",
+    [taskId, global.user_id],
   );
 
-  if (currentTaskIndex === -1) {
+  if (task.rows.length === 0) {
     return res.status(404).json({});
   }
 
-  const deletedTask = global.tasks.splice(currentTaskIndex, 1)[0];
-  const { userId, ...sanitizedTask } = deletedTask;
-
-  return res.status(200).json(sanitizedTask);
+  return res.status(200).json(task.rows[0]);
 }
 
 module.exports = { create, index, show, update, deleteTask };
