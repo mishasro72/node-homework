@@ -7,6 +7,10 @@ function errorHandler(err, req, res, next) {
   res.status(500).json({
     error: "Internal Server Error",
   });
+
+  if (err.name === "PrismaClientInitializationError") {
+    console.error("Couldn't connect to the database. Is it running?");
+  }
 }
 
 module.exports = errorHandler;
