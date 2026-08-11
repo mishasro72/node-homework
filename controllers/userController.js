@@ -29,24 +29,28 @@ async function register(req, res, next) {
     });
   }
   let user = null;
-
-  value.hashed_password = await hashPassword(value.password);
+  value.hashedPassword = await hashPassword(value.password);
   try {
-    user = await pool.query(
-      `INSERT INTO users (email, name, hashed_password) 
-      VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, value.hashed_password],
-    );
-  } catch (e) {
-    if (e.code === "23505") {
+    user = await prisma.user.create({
+      data: {
+        name: value.name,
+        email: value.email,
+        hashedPassword: value.hashedPassword,
+      },
+      select: { name: true, email: true, id: true },
+    });
+  } catch (err) {
+    if (
+      err.name === "PrismaClientKnownRequestError" &&
+      err.code === "P2002"
+    ) {
       return res.status(400).json({ message: "User already exists" });
+    } else {
+      return next(err);
     }
-    return next(e);
   }
-
-  const newUser = user.rows[0];
-  global.user_id = newUser.id;
-  return res.status(201).json({ name: newUser.name, email: newUser.email });
+  global.user_id = user.id;
+  return res.status(201).json({ name: user.name, email: user.email });
 }
 
 async function logon(req, res) {
