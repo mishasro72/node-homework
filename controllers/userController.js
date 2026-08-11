@@ -2,7 +2,6 @@ const { userSchema } = require("../validation/userSchema");
 const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
-const pool = require("../db/pg-pool");
 const prisma = require("../db/prisma");
 
 async function hashPassword(password) {
@@ -40,15 +39,13 @@ async function register(req, res, next) {
       select: { name: true, email: true, id: true },
     });
   } catch (err) {
-    if (
-      err.name === "PrismaClientKnownRequestError" &&
-      err.code === "P2002"
-    ) {
+    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
       return res.status(400).json({ message: "User already exists" });
     } else {
       return next(err);
     }
   }
+
   global.user_id = user.id;
   return res.status(201).json({ name: user.name, email: user.email });
 }
