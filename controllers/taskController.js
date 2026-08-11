@@ -59,37 +59,37 @@ async function show(req, res) {
   return res.status(200).json(tasks.rows[0]);
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
   const { error, value: taskChange } = patchTaskSchema.validate(
     req.body ?? {},
     {
       abortEarly: false,
     },
   );
+
   if (error) {
     return res.status(400).json({ message: error.message });
   }
 
-  let keys = Object.keys(taskChange);
+  const id = parseInt(req.params.id, 10);
+  try {
+    const updatedTask = await prisma.task.update({
+      data: taskChange,
+      where: {
+        id,
+        userId: global.user_id,
+      },
+      select: { title: true, isCompleted: true, id: true },
+    });
 
-  keys = keys.map((key) => (key === "isCompleted" ? "is_completed" : key));
-
-  const setClauses = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
-  const idParm = `$${keys.length + 1}`;
-  const userParm = `$${keys.length + 2}`;
-
-  const updatedTask = await pool.query(
-    `UPDATE tasks SET ${setClauses} 
-     WHERE id = ${idParm} AND user_id = ${userParm} 
-     RETURNING id, title, is_completed`,
-    [...Object.values(taskChange), req.params.id, global.user_id],
-  );
-
-  if (updatedTask.rows.length === 0) {
-    return res.status(404).json({});
+    return res.status(200).json(updatedTask);
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "The task was not found." });
+    } else {
+      return next(err);
+    }
   }
-
-  return res.status(200).json(updatedTask.rows[0]);
 }
 
 async function deleteTask(req, res) {
