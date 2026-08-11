@@ -2,7 +2,7 @@ const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 const pool = require("../db/pg-pool");
 const prisma = require("../db/prisma");
 
-async function create(req, res) {
+async function create(req, res, next) {
   const { error, value } = taskSchema.validate(req.body ?? {}, {
     abortEarly: false,
   });
@@ -10,14 +10,22 @@ async function create(req, res) {
     return res.status(400).json({ message: error.message });
   }
 
-  const task = await pool.query(
-    `INSERT INTO tasks (title, is_completed, user_id) 
-     VALUES ($1, $2, $3) 
-     RETURNING id, title, is_completed`,
-    [value.title, value.isCompleted ?? false, global.user_id],
-  );
+  let task = null;
 
-  return res.status(201).json(task.rows[0]);
+  try {
+    task = await prisma.task.create({
+      data: {
+        title: value.title,
+        isCompleted: value.isCompleted ?? false,
+        userId: global.user_id,
+      },
+      select: { id: true, title: true, isCompleted: true },
+    });
+  } catch (err) {
+    return next(err);
+  }
+
+  return res.status(201).json(task);
 }
 
 async function index(req, res) {
