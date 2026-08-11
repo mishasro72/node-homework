@@ -1,5 +1,4 @@
 const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
-const pool = require("../db/pg-pool");
 const prisma = require("../db/prisma");
 
 async function create(req, res, next) {
@@ -80,6 +79,10 @@ async function update(req, res, next) {
   }
 
   const id = parseInt(req.params?.id, 10);
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid task ID" });
+  }
+
   try {
     const updatedTask = await prisma.task.update({
       data: taskChange,
@@ -100,23 +103,26 @@ async function update(req, res, next) {
   }
 }
 
-async function deleteTask(req, res) {
-  const taskId = parseInt(req.params?.id);
+async function deleteTask(req, res, next) {
+  const taskId = parseInt(req.params?.id, 10);
 
-  if (!taskId) {
-    return res.status(400).json({});
+  if (isNaN(taskId)) {
+    return res.status(400).json({ message: "Invalid task ID" });
   }
 
-  const task = await pool.query(
-    "DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING id, title, is_completed",
-    [taskId, global.user_id],
-  );
-
-  if (task.rows.length === 0) {
-    return res.status(404).json({});
+  try {
+    const task = await prisma.task.delete({
+      where: { id: taskId, userId: global.user_id },
+      select: { title: true, isCompleted: true, id: true },
+    });
+    return res.status(200).json(task);
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "The task was not found." });
+    } else {
+      return next(err);
+    }
   }
-
-  return res.status(200).json(task.rows[0]);
 }
 
 module.exports = { create, index, show, update, deleteTask };
