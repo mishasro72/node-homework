@@ -1,4 +1,5 @@
 const prisma = require("../db/prisma");
+const { paginationSchema } = require("../validation/paginationSchema");
 
 async function getUserAnalytics(req, res, next) {
   try {
@@ -72,8 +73,14 @@ async function getUserAnalytics(req, res, next) {
 
 async function getUsersWithStats(req, res, next) {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const { error, value } = paginationSchema.validate(req.query, {
+      abortEarly: false,
+    });
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const { page, limit } = value;
     const skip = (page - 1) * limit;
 
     const usersRaw = await prisma.user.findMany({
