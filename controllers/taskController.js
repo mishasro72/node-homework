@@ -70,7 +70,7 @@ async function index(req, res) {
     where: whereClause,
   });
 
-  const totalPages = Math.ceil(totalTasks / limit);
+  const totalPages = Math.ceil(totalTasks / limit) || 1;
 
   const pagination = {
     page,
