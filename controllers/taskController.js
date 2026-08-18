@@ -16,9 +16,10 @@ async function create(req, res, next) {
       data: {
         title: value.title,
         isCompleted: value.isCompleted ?? false,
+        priority: value.priority ?? "medium",
         userId: global.user_id,
       },
-      select: { id: true, title: true, isCompleted: true },
+      select: { id: true, title: true, priority: true, isCompleted: true },
     });
   } catch (err) {
     return next(err);
@@ -30,7 +31,18 @@ async function create(req, res, next) {
 async function index(req, res) {
   const tasks = await prisma.task.findMany({
     where: { userId: global.user_id },
-    select: { title: true, isCompleted: true, id: true },
+    select: {
+      title: true,
+      isCompleted: true,
+      priority: true,
+      createdAt: true,
+      User: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 
   if (tasks.length === 0) {

@@ -74,4 +74,50 @@ function logoff(req, res) {
   return res.status(200).end();
 }
 
-module.exports = { register, logon, logoff };
+async function show(req, res, next) {
+  try {
+    const userId = parseInt(req.params.id, 10);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    if (!global.user_id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (userId !== global.user_id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        Task: {
+          where: { isCompleted: false },
+          select: {
+            id: true,
+            title: true,
+            priority: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        },
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { register, logon, logoff, show };
