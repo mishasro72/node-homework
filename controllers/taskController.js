@@ -29,8 +29,22 @@ async function create(req, res, next) {
 }
 
 async function index(req, res) {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const skip = (page - 1) * limit;
+  const find = req.query.find;
+
+  const whereClause = { userId: global.user_id };
+
+  if (find) {
+    whereClause.title = {
+      contains: find,
+      mode: "insensitive",
+    };
+  }
+
   const tasks = await prisma.task.findMany({
-    where: { userId: global.user_id },
+    where: whereClause,
     select: {
       title: true,
       isCompleted: true,
@@ -43,13 +57,31 @@ async function index(req, res) {
         },
       },
     },
+    skip: skip,
+    take: limit,
+    orderBy: { createdAt: "desc" },
   });
 
-  if (tasks.length === 0) {
-    return res.status(404).json({});
-  }
+  // if (tasks.length === 0) {
+  //   return res.status(404).json({});
+  // }
 
-  return res.status(200).json(tasks);
+  const totalTasks = await prisma.task.count({
+    where: whereClause,
+  });
+
+  const totalPages = Math.ceil(totalTasks / limit);
+
+  const pagination = {
+    page,
+    limit,
+    total: totalTasks,
+    pages: totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  };
+
+  return res.status(200).json({ tasks, pagination });
 }
 
 async function show(req, res, next) {
