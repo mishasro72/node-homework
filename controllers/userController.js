@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 const prisma = require("../db/prisma");
+const { randomUUID } = require("crypto");
+const jwt = require("jsonwebtoken");
 
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -15,6 +17,22 @@ async function comparePassword(inputPassword, storedHash) {
   const keyBuffer = Buffer.from(key, "hex");
   const derivedKey = await scrypt(inputPassword, salt, 64);
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
+}
+
+function cookieFlags(req) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  };
+}
+
+function setJwtCookie(req, res, user) {
+  const payload = { id: user.id, csrfToken: randomUUID() };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+  res.cookie("jwt", token, { ...cookieFlags(req), maxAge: 3600000 });
+  return payload.csrfToken;
 }
 
 async function register(req, res, next) {
@@ -67,10 +85,11 @@ async function register(req, res, next) {
       return { user: newUser, welcomeTasks };
     });
 
-    global.user_id = result.user.id;
+    const csrfToken = setJwtCookie(req, res, result.user);
 
     return res.status(201).json({
       user: result.user,
+      csrfToken,
       welcomeTasks: result.welcomeTasks,
       transactionStatus: "success",
     });
@@ -83,27 +102,37 @@ async function register(req, res, next) {
   }
 }
 
-async function logon(req, res) {
-  let { email, password } = req.body;
-  email = email.toLowerCase();
+async function logon(req, res, next) {
+  try {
+    let { email, password } = req.body;
+    email = email.toLowerCase();
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return res.status(401).json({ message: "Invalid email or password" });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const goodCredentials = await comparePassword(
+      password,
+      user.hashedPassword,
+    );
+
+    if (!goodCredentials) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const csrfToken = setJwtCookie(req, res, user);
+
+    return res
+      .status(200)
+      .json({ name: user.name, email: user.email, csrfToken });
+  } catch (err) {
+    return next(err);
   }
-
-  const goodCredentials = await comparePassword(password, user.hashedPassword);
-
-  if (!goodCredentials) {
-    return res.status(401).json({ message: "Invalid email or password" });
-  }
-
-  global.user_id = user.id;
-  return res.status(200).json({ name: user.name, email: user.email });
 }
 
 function logoff(req, res) {
-  global.user_id = null;
+  res.clearCookie("jwt", cookieFlags(req));
   return res.status(200).end();
 }
 
@@ -115,11 +144,7 @@ async function show(req, res, next) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    if (!global.user_id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    if (userId !== global.user_id) {
+    if (userId !== req.user.id) {
       return res.status(403).json({ message: "Access denied" });
     }
 

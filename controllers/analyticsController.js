@@ -9,11 +9,7 @@ async function getUserAnalytics(req, res, next) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    if (!global.user_id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    if (userId !== global.user_id) {
+    if (userId !== req.user.id) {
       return res.status(403).json({ message: "Access denied" });
     }
 

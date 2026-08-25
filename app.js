@@ -8,11 +8,25 @@ const analyticsRouter = require("./routes/analyticsRoutes");
 
 const errorHandler = require("./middleware/error-handler");
 const notFound = require("./middleware/not-found");
-const authMiddleware = require("./middleware/auth");
+const jwtMiddleware = require("./middleware/jwtMiddleware");
+const cookieParser = require("cookie-parser");
 
-global.user_id = null;
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const rateLimiter = require("express-rate-limit");
 
+app.set("trust proxy", 1);
+
+app.use(
+  rateLimiter({
+    windoeMs: 15 * 60 * 1000,
+    max: 100,
+  }),
+);
+app.use(helmet());
+app.use(cookieParser());
 app.use(express.json());
+app.use(xss());
 
 app.get("/health", async (req, res) => {
   try {
@@ -25,8 +39,8 @@ app.get("/health", async (req, res) => {
   }
 });
 app.use("/api/users", userRouter);
-app.use("/api/tasks", authMiddleware, taskRouter);
-app.use("/api/analytics", authMiddleware, analyticsRouter);
+app.use("/api/tasks", jwtMiddleware, taskRouter);
+app.use("/api/analytics", jwtMiddleware, analyticsRouter);
 app.use(notFound);
 app.use(errorHandler);
 

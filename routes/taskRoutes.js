@@ -1,14 +1,14 @@
 const express = require("express");
-const useController = require("../controllers/taskController");
+const taskController = require("../controllers/taskController");
 
 const router = express.Router();
 
-router.get("/", useController.index);
-router.post("/bulk", useController.bulkCreate);
-router.get("/:id", useController.show);
-router.post("/", useController.create);
-router.patch("/:id", useController.update);
-router.delete("/:id", useController.deleteTask);
+router.get("/", taskController.index);
+router.post("/bulk", taskController.bulkCreate);
+router.get("/:id", taskController.show);
+router.post("/", taskController.create);
+router.patch("/:id", taskController.update);
+router.delete("/:id", taskController.deleteTask);
 
 module.exports = router;
 
