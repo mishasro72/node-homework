@@ -88,10 +88,9 @@ async function register(req, res, next) {
     const csrfToken = setJwtCookie(req, res, result.user);
 
     return res.status(201).json({
-      user: result.user,
+      name: result.user.name,
+      email: result.user.email,
       csrfToken,
-      welcomeTasks: result.welcomeTasks,
-      transactionStatus: "success",
     });
   } catch (err) {
     if (err.code === "P2002") {
