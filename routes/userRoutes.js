@@ -1,12 +1,16 @@
 const express = require("express");
-const useController = require("../controllers/userController");
+const userController = require("../controllers/userController");
+const jwtMiddleware = require("../middleware/jwtMiddleware");
 
 const router = express.Router();
 
-router.post("/register", useController.register);
-router.post("/logon", useController.logon);
-router.post("/logoff", useController.logoff);
-router.get("/:id", useController.show);
+router.post("/register", userController.register);
+router.post("/logon", userController.logon);
+
+router.use(jwtMiddleware);
+
+router.post("/logoff", userController.logoff);
+router.get("/:id", userController.show);
 
 module.exports = router;
 
