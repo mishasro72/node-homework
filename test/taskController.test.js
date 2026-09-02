@@ -191,7 +191,7 @@ describe("test updating and deleting of tasks created tasks", () => {
 
   it("30. User2 can't delete this task", async () => {
     const req = httpMocks.createRequest({
-      method: "PATCH",
+      method: "DELETE",
       params: { id: saveTaskId.toString() },
       body: { isCompleted: true },
       user: { id: user2.id },
@@ -203,7 +203,7 @@ describe("test updating and deleting of tasks created tasks", () => {
 
   it("31. User1 can delete this task", async () => {
     const req = httpMocks.createRequest({
-      method: "PATCH",
+      method: "DELETE",
       params: { id: saveTaskId.toString() },
       body: { isCompleted: true },
       user: { id: user1.id },

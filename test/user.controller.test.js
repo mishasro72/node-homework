@@ -104,7 +104,7 @@ describe("testing logon, register, and logoff", () => {
       method: "POST",
       body: { email: "bob@sample.com", password: "password" },
     });
-    res = MockResponseWithCookies();
+    const res = MockResponseWithCookies();
     await waitForRouteHandlerCompletion(logon, req, res);
     expect(res.statusCode).toBe(401);
   });
