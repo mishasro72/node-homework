@@ -5,6 +5,7 @@ const scrypt = util.promisify(crypto.scrypt);
 const prisma = require("../db/prisma");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { StatusCodes } = require("http-status-codes");
 
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
