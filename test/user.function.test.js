@@ -16,8 +16,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  prisma.$disconnect();
-  server.close();
+  await prisma.$disconnect();
+  await new Promise((resolve, reject) => {
+    server.close((err) => (err ? reject(err) : resolve()));
+  });
 });
 
 describe("register a user ", () => {

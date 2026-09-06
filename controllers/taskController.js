@@ -70,6 +70,10 @@ async function index(req, res) {
     orderBy: { createdAt: "desc" },
   });
 
+  if (tasks.length === 0) {
+    return res.status(404).json({ message: "No tasks found" });
+  }
+
   const totalTasks = await prisma.task.count({
     where: whereClause,
   });
@@ -103,10 +107,10 @@ async function show(req, res, next) {
         id: true,
         title: true,
         isCompleted: true,
-        priority: true, 
+        priority: true,
         userId: true,
         User: {
-             select: { name: true },
+          select: { name: true },
         },
       },
     });
