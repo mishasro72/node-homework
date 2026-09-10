@@ -16,8 +16,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  prisma.$disconnect();
-  server.close();
+  await prisma.$disconnect();
+  await new Promise((resolve, reject) => {
+    server.close((err) => (err ? reject(err) : resolve()));
+  });
 });
 
 describe("register a user ", () => {
@@ -29,7 +31,10 @@ describe("register a user ", () => {
       email: "jdeere@example.com",
       password: "Pa$$word20",
     };
-    saveRes = await agent.post("/api/users/register").send(newUser);
+    saveRes = await agent
+      .post("/api/users/register")
+      .set("X-Recaptcha-Test", process.env.RECAPTCHA_BYPASS)
+      .send(newUser);
     expect(saveRes.status).toBe(201);
   });
 
